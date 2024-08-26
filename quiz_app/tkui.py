@@ -13,8 +13,10 @@ class MainFrame(ttk.Frame):
         # an option(checkbutton) selected (checked)
         self.option_checked = False
         self.option_checked_index = -1
+        self.score = 0
         # get questions from json file
         self.questions = read_questions("questions.json")
+        self.total_question = len(self.questions)
 
         # Variables
         self.question_var = tk.StringVar()
@@ -40,20 +42,17 @@ class MainFrame(ttk.Frame):
         self.option_2.config(command=self.uncheck_other)
         self.option_3.config(command=self.uncheck_other)
 
-        self.message = ttk.Label(self)
+        self.message = ttk.Label(self, text=f"0/{self.total_question}")
 
         next_button = ttk.Button(self, text="Next")
         next_button.pack(anchor="w", pady=10)
         next_button.config(command=self.next_question)
 
-        check_ans_button = ttk.Button(self, text="Check", command=self.check_ans)
-        check_ans_button.pack(anchor="w")
-
     def make_question(self, question):
         question = self.questions[MainFrame.question_index]
         question_text = question.get("question")
         options = question.get("options")
-        answer_index = question.get("answer")
+        answer_index = int(question.get("answer"))
         q_obj = Quiz(question_text, options, answer_index)
         return q_obj
 
@@ -61,27 +60,28 @@ class MainFrame(ttk.Frame):
         for var in self.options_var:
             var.set(value=False)
 
-    def next_question(self, index=0):
-        q = self.questions[MainFrame.question_index]
-        q_text = q.get("question")
-        options = q.get("options")
-        self.ans_index = int(q.get("answer"))
+    def next_question(self):
+        if MainFrame.question_index < self.total_question:
+            q = self.questions[MainFrame.question_index]
+            q_text = q.get("question")
+            options = q.get("options")
+            self.ans_index = int(q.get("answer"))
 
-        self.question_var.set(q_text)
-        self.question_label.pack(anchor="w")
+            self.question_var.set(q_text)
+            self.question_label.pack(anchor="w")
+            self.option_0.config(text=options[0])
+            self.option_1.config(text=options[1])
+            self.option_2.config(text=options[2])
+            self.option_3.config(text=options[3])
+            self.option_0.pack(anchor="w")
+            self.option_1.pack(anchor="w")
+            self.option_2.pack(anchor="w")
+            self.option_3.pack(anchor="w")
 
-        self.option_0.config(text=options[0])
-        self.option_1.config(text=options[1])
-        self.option_2.config(text=options[2])
-        self.option_3.config(text=options[3])
-        self.option_0.pack(anchor="w")
-        self.option_1.pack(anchor="w")
-        self.option_2.pack(anchor="w")
-        self.option_3.pack(anchor="w")
-
-        self.uncheck_all()
-        self.message.config(text="")
-        MainFrame.question_index += 1
+            self.uncheck_all()
+            self.check_ans()
+            self.message.config(text=f"{self.score}/{self.total_question}")
+            MainFrame.question_index += 1
 
     def get_selected_index(self, options):
         if True in options:
@@ -89,17 +89,14 @@ class MainFrame(ttk.Frame):
         return -1
 
     def check_ans(self):
-        user_ans_index = self.get_selected_index(self.options_var)
+        options = [var.get() for var in self.options_var]
+        user_ans_index = self.get_selected_index(options)
         if self.ans_index == user_ans_index:
-            self.message.config(text="Correct")
-        else:
-            self.message.config(text="Incorrect")
+            self.score += 1
         self.message.pack(anchor="w")
 
     def uncheck_other(self):
         options = [var.get() for var in self.options_var]
-
-
         if self.option_checked and self.option_checked_index != -1:
             alredy_checked_option = self.options_var[self.option_checked_index]
             alredy_checked_option.set(value=False)
@@ -110,7 +107,7 @@ class MainFrame(ttk.Frame):
             self.option_checked_index = self.get_selected_index(options)
             self.option_checked = True
 
-
+        self.check_ans()
 
 class App(tk.Tk):
     def __init__(self, **kwargs):

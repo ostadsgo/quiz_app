@@ -8,6 +8,4 @@ class Quiz:
     def check_answer(self, user_ans_index: int) -> bool:
         return (user_ans_index - 1) == self.answer_index
 
-    def make_question(self, question):
-        pass
 
